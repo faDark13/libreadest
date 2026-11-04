@@ -134,30 +134,6 @@ describe('useOPDSSubscriptions', () => {
     );
   });
 
-  test('queues a cloud upload for a new book when Books sync is on', async () => {
-    vi.useFakeTimers();
-    try {
-      currentUser = { id: 'user-1' };
-      useLibraryStore.getState().setLibrary([]);
-      const book = makeBook('sub-book');
-      mockedSync.mockResolvedValue({ newBooks: [], totalNewBooks: 0, errors: [] });
-      mockedSync.mockImplementationOnce(async (_c, _a, _b, onBooksImported) => {
-        await onBooksImported?.([book]);
-        return { newBooks: [book], totalNewBooks: 1, errors: [] };
-      });
-
-      renderHook(() => useOPDSSubscriptions());
-      await settle();
-      await act(async () => {
-        vi.advanceTimersByTime(3000);
-      });
-
-      expect(mockedQueueUpload).toHaveBeenCalledWith(book);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
   test('does NOT queue a cloud upload when the Books sync category is off', async () => {
     vi.useFakeTimers();
     try {

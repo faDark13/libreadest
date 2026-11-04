@@ -72,11 +72,12 @@ describe('useCloudSyncStatus (issue #5910)', () => {
     expect(result.current.providers.map((p) => p.kind)).toEqual(['webdav']);
   });
 
-  it('still asks for sign-in when Readest Cloud is the only provider', () => {
+  it('reports never synced when no provider is configured', () => {
     const { result } = renderHook(() => useCloudSyncStatus(0));
 
-    expect(result.current.needsSignIn).toBe(true);
-    expect(result.current.label).toBe('Sign in to Sync');
+    expect(result.current.providers).toEqual([]);
+    expect(result.current.needsSignIn).toBe(false);
+    expect(result.current.label).toBe('Never synced');
   });
 
   it('ignores the native stamp when Readest Cloud is switched off', () => {
@@ -94,7 +95,7 @@ describe('useCloudSyncStatus (issue #5910)', () => {
     expect(result.current.label).toBe('Never synced');
   });
 
-  it('lists both providers with their own timestamps', () => {
+  it('lists the third-party provider and ignores the native Readest Cloud stamp', () => {
     mockUser = { id: 'u1' };
     mockSettings = {
       readestCloud: { enabled: true },
@@ -103,10 +104,8 @@ describe('useCloudSyncStatus (issue #5910)', () => {
     const { result } = renderHook(() => useCloudSyncStatus(NOW - 300_000));
 
     expect(result.current.providers).toEqual([
-      expect.objectContaining({ kind: 'readest', lastSyncedAt: NOW - 300_000 }),
       expect.objectContaining({ kind: 'webdav', lastSyncedAt: NOW - 120_000 }),
     ]);
-    // The row shows the freshest; the per-provider breakdown is the dialog's job.
     expect(result.current.lastSyncedAt).toBe(NOW - 120_000);
   });
 
@@ -204,7 +203,7 @@ describe('useCloudSyncStatus Hardcover (book scope)', () => {
     mockSettings = { hardcover: { enabled: true, autoSync: true, accessToken: 'tok' } } as never;
     const { result } = renderHook(() => useCloudSyncStatus(0, 'book-a'));
 
-    expect(result.current.providers.map((p) => p.kind)).toEqual(['readest', 'hardcover']);
+    expect(result.current.providers.map((p) => p.kind)).toEqual(['hardcover']);
     expect(result.current.needsSignIn).toBe(false);
   });
 });

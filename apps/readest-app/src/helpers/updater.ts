@@ -142,11 +142,16 @@ export const resolveNightlyUpdate = async (
   return candidates[0]!;
 };
 
+// This fork ships unsigned builds from its own CI; upstream update feeds are
+// not used. Explicit `boolean` keeps the code below reachable for the compiler.
+const UPDATER_DISABLED: boolean = true;
+
 export const checkForAppUpdates = async (
   _: TranslationFunc,
   isAutoCheck = true,
   updateChannel: 'stable' | 'nightly' = 'stable',
 ): Promise<boolean> => {
+  if (UPDATER_DISABLED) return false;
   const lastCheck = localStorage.getItem(LAST_CHECK_KEY);
   const now = Date.now();
   if (isAutoCheck && lastCheck && now - parseInt(lastCheck, 10) < CHECK_UPDATE_INTERVAL_SEC * 1000)

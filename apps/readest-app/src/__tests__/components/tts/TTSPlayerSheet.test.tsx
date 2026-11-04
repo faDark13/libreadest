@@ -79,23 +79,6 @@ vi.mock('@/store/readerProgressStore', () => ({
   useBookProgress: () => ({ sectionLabel: 'Chapter 5' }),
 }));
 
-// Premium gating for the offline-audio row. Defaults to a signed-in premium
-// user so the existing tests (which don't render the row) are unaffected;
-// the gating tests below flip these.
-const { routerPush, mockAuth, mockQuota } = vi.hoisted(() => ({
-  routerPush: vi.fn(),
-  mockAuth: { user: { id: 'u' } as { id: string } | null },
-  mockQuota: {
-    userProfilePlan: 'pro' as 'free' | 'plus' | 'pro' | 'purchase' | undefined,
-  },
-}));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: routerPush }) }));
-vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ user: mockAuth.user, token: 'tok' }),
-}));
-vi.mock('@/hooks/useQuotaStats', () => ({
-  useQuotaStats: () => ({ userProfilePlan: mockQuota.userProfilePlan }),
-}));
 vi.mock('@/app/reader/components/tts/TTSChaptersView', () => ({
   default: () => <div>chapters-view</div>,
 }));
@@ -185,9 +168,6 @@ describe('TTSPlayerSheet', () => {
     getBookData.mockReturnValue({
       book: { title: 'Alice in Wonderland', coverImageUrl: null },
     });
-    // Default: signed-in premium user (the row-less tests never hit the gate).
-    mockAuth.user = { id: 'u' };
-    mockQuota.userProfilePlan = 'pro';
   });
 
   afterEach(() => {
@@ -634,8 +614,7 @@ describe('TTSPlayerSheet', () => {
     ...over,
   });
 
-  test('offline audio row: a premium user has no badge and opens the chapters view', () => {
-    mockQuota.userProfilePlan = 'pro';
+  test('offline audio row opens the chapters view', () => {
     const props = makeProps({ downloads: makeDownloads() });
     render(<TTSPlayerSheet {...props} />);
     const row = screen.getByLabelText('Offline Audio');
@@ -643,31 +622,6 @@ describe('TTSPlayerSheet', () => {
     expect(screen.getByText('1 of 1 downloaded')).toBeTruthy();
     fireEvent.click(row);
     expect(screen.getByText('chapters-view')).toBeTruthy();
-    expect(routerPush).not.toHaveBeenCalled();
-  });
-
-  test('offline audio row: a free user sees a Premium badge and is routed to upgrade', () => {
-    mockQuota.userProfilePlan = 'free';
-    const props = makeProps({ downloads: makeDownloads() });
-    render(<TTSPlayerSheet {...props} />);
-    expect(screen.getByText('Premium')).toBeTruthy();
-    expect(screen.getByText('Download chapters for offline playback')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Offline Audio'));
-    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
-    expect(props.onClose).toHaveBeenCalled();
-    // The premium chapters view must not open for a free user.
-    expect(screen.queryByText('chapters-view')).toBeNull();
-  });
-
-  test('offline audio row: a signed-out user is routed to sign-in', () => {
-    mockAuth.user = null;
-    mockQuota.userProfilePlan = undefined;
-    const props = makeProps({ downloads: makeDownloads() });
-    render(<TTSPlayerSheet {...props} />);
-    expect(screen.getByText('Premium')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('Offline Audio'));
-    expect(routerPush).toHaveBeenCalledWith(expect.stringContaining('/auth?redirect='));
-    expect(screen.queryByText('chapters-view')).toBeNull();
   });
 
   // Books with recorded narration (EPUB 3 Media Overlays) surface the narrator
@@ -724,42 +678,12 @@ describe('TTSPlayerSheet', () => {
     expect(viewSettings['ttsUseNarration']).toBeUndefined();
   });
 
-  test('premium voices show the plan that unlocks them', async () => {
+  test('a multilingual voice is badged at the row end, a disabled one greyed', async () => {
     const groups = [
       {
         id: 'readest',
         name: 'Readest Voice',
-        voices: [
-          { id: 'kokoro:zf_001', name: 'Zifang', lang: 'zh-CN', tier: 'plus' as const },
-          { id: 'omnivoice:xiaoyu', name: 'Xiaoyu', lang: 'zh-CN', tier: 'pro' as const },
-        ],
-      },
-      ...voiceGroups,
-    ];
-    render(<TTSPlayerSheet {...makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) })} />);
-    fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /Readest Voice/ })));
-    const row = (name: string) => screen.getByText(name).closest('button')!;
-    expect((await waitFor(() => row('Xiaoyu'))).textContent).toBe('XiaoyuPro');
-    expect(row('Zifang').textContent).toBe('ZifangPlus');
-    fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
-    expect(row('Guy').textContent).toBe('Guy');
-  });
-
-  test('badges sit at the row end; a multilingual voice is badged, a locked one greyed', async () => {
-    const groups = [
-      {
-        id: 'readest',
-        name: 'Readest Voice',
-        voices: [
-          {
-            id: 'omnivoice:xiaoyu',
-            name: 'Xiaoyu',
-            lang: 'zh-CN',
-            tier: 'pro' as const,
-            disabled: true,
-          },
-        ],
+        voices: [{ id: 'omnivoice:xiaoyu', name: 'Xiaoyu', lang: 'zh-CN', disabled: true }],
       },
       {
         id: 'edge-tts',
@@ -778,7 +702,6 @@ describe('TTSPlayerSheet', () => {
     fireEvent.click(screen.getByLabelText('Voice'));
     const row = (name: string) => screen.getAllByText(name).at(-1)!.closest('button')!;
     expect((await waitFor(() => row('Xiaoyu'))).innerHTML).toContain('text-base-content/40');
-    expect(screen.getByText('Pro').className).toContain('ms-auto');
     fireEvent.click(screen.getByRole('button', { name: /Edge TTS/ }));
     expect(row('Ava').textContent).toBe('AvaMultilingual');
     expect(screen.getByText('Multilingual').className).toContain('ms-auto');
@@ -850,56 +773,6 @@ describe('TTSPlayerSheet', () => {
     expect(edge.className).toContain('font-semibold');
     expect(kokoro.textContent).not.toContain('af_heart');
     expect(kokoro.className).not.toContain('font-semibold');
-  });
-
-  test('a Readest voice the plan lacks sends the reader to upgrade', async () => {
-    const groups = [
-      {
-        id: 'readest-tts',
-        name: 'Readest Voice',
-        voices: [
-          {
-            id: 'omnivoice:clara',
-            name: 'Clara',
-            lang: 'en-US',
-            tier: 'pro' as const,
-            disabled: true,
-          },
-        ],
-      },
-    ];
-    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
-    render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^ClaraPro$/ })));
-    expect(props.onSetVoice).not.toHaveBeenCalled();
-    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
-    expect(props.onClose).toHaveBeenCalled();
-  });
-
-  test('a signed-out reader tapping a Readest voice is sent to sign in', async () => {
-    mockAuth.user = null;
-    const groups = [
-      {
-        id: 'readest-tts',
-        name: 'Readest Voice',
-        voices: [
-          {
-            id: 'kokoro:af_heart',
-            name: 'Heart',
-            lang: 'en-US',
-            tier: 'plus' as const,
-            disabled: true,
-          },
-        ],
-      },
-    ];
-    const props = makeProps({ onGetVoices: vi.fn().mockResolvedValue(groups) });
-    render(<TTSPlayerSheet {...props} />);
-    fireEvent.click(screen.getByLabelText('Voice'));
-    fireEvent.click(await waitFor(() => screen.getByRole('button', { name: /^HeartPlus$/ })));
-    expect(props.onSetVoice).not.toHaveBeenCalled();
-    expect(routerPush).toHaveBeenCalledWith(expect.stringMatching(/^\/auth/));
   });
 
   test('reopening the sheet returns to the main view', async () => {

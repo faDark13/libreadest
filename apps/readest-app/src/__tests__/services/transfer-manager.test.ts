@@ -107,9 +107,10 @@ beforeEach(() => {
   resetTransferManager();
   vi.clearAllMocks();
   localStorage.clear();
-  // Book uploads are gated on the selected cloud sync provider and
-  // deferred until settings hydrate; hydrate with Readest Cloud selected
-  // so the pre-gating behavior under test is preserved.
+  // Book uploads need Readest Cloud storage, which this fork does not ship.
+  // These tests exercise the queue mechanics and upload execution, so allow
+  // them explicitly; the gating itself has dedicated coverage.
+  vi.spyOn(transferManager, 'isBookUploadAllowed').mockReturnValue(true);
   useSettingsStore.setState({
     settings: {
       version: 1,

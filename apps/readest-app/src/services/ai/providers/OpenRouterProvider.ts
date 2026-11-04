@@ -25,7 +25,7 @@ const DEFAULT_EMBEDDING_MODEL = 'openai/text-embedding-3-small';
  */
 export class OpenRouterProvider implements AIProvider {
   id: AIProviderName = 'openrouter';
-  name = 'OpenRouter (Custom)';
+  name = 'OpenAI-compatible';
   requiresAuth = true;
 
   private settings: AISettings;
@@ -49,8 +49,7 @@ export class OpenRouterProvider implements AIProvider {
       // Optional OpenRouter app attribution. Harmless for other OpenAI-
       // compatible backends (they ignore unknown headers).
       headers: {
-        'HTTP-Referer': 'https://readest.com',
-        'X-Title': 'Readest',
+        'X-Title': 'libreadest',
       },
       // Route chat completions / embeddings through our environment-aware
       // fetch so streaming responses bypass the renderer's CORS sandbox

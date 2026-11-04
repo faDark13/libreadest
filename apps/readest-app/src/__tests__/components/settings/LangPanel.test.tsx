@@ -177,23 +177,13 @@ describe('LangPanel — Custom Translators premium gate', () => {
     cleanup();
   });
 
-  it('sends a signed-out reader to sign in', () => {
+  it('opens custom translators for every reader, without a plan badge', () => {
     render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
 
-    expect(getCustomTranslatorsRow().textContent).toContain('Premium');
+    expect(getCustomTranslatorsRow().textContent).not.toContain('Premium');
     fireEvent.click(getCustomTranslatorsRow());
-    expect(state.push).toHaveBeenCalledWith(expect.stringMatching(/^\/auth\?redirect=/));
-  });
-
-  it('sends a free user to the plans page', () => {
-    state.token = sessionToken({ plan: 'free' });
-    state.user = { id: 'u' };
-
-    render(<LangPanel bookKey='book-1' onRegisterReset={vi.fn()} />);
-
-    fireEvent.click(getCustomTranslatorsRow());
-    expect(state.push).toHaveBeenCalledWith(expect.stringMatching(/^\/user\?redirect=/));
-    expect(screen.queryByText('Add Translator')).toBeNull();
+    expect(state.push).not.toHaveBeenCalled();
+    expect(screen.getByText('Add Translator')).toBeTruthy();
   });
 
   it('opens the sub-page for a subscriber', () => {

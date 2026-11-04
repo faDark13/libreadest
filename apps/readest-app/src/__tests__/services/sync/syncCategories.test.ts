@@ -27,13 +27,14 @@ afterEach(() => clearSettings());
 
 describe('isSyncCategoryEnabled', () => {
   test('defaults to true when settings are not loaded yet', () => {
-    expect(isSyncCategoryEnabled('book')).toBe(true);
+    // Book/progress/note ride Readest Cloud, which this fork does not have.
+    expect(isSyncCategoryEnabled('book')).toBe(false);
     expect(isSyncCategoryEnabled('dictionary')).toBe(true);
   });
 
   test('defaults to true when syncCategories map is missing', () => {
     setSettings({});
-    expect(isSyncCategoryEnabled('book')).toBe(true);
+    expect(isSyncCategoryEnabled('book')).toBe(false);
     expect(isSyncCategoryEnabled('opds_catalog')).toBe(true);
   });
 
@@ -104,14 +105,14 @@ describe('isSyncCategoryEnabled', () => {
       expect(isSyncCategoryEnabled('progress')).toBe(false);
     });
 
-    test('no gating when readest is the provider', () => {
+    test('the native channels stay off with no provider at all', () => {
       setSettings({
         webdav: { enabled: false },
         googleDrive: { enabled: false },
       } as Partial<SystemSettings>);
-      expect(isSyncCategoryEnabled('book')).toBe(true);
-      expect(isSyncCategoryEnabled('progress')).toBe(true);
-      expect(isSyncCategoryEnabled('note')).toBe(true);
+      expect(isSyncCategoryEnabled('book')).toBe(false);
+      expect(isSyncCategoryEnabled('progress')).toBe(false);
+      expect(isSyncCategoryEnabled('note')).toBe(false);
     });
   });
 
@@ -214,14 +215,14 @@ describe('isSyncCategoryEnabled', () => {
   });
 
   describe('provider gating with multiple providers', () => {
-    test('native book channels stay on when Readest Cloud runs alongside Drive', () => {
+    test('native book channels stay off even when the Readest Cloud flag is set', () => {
       setSettings({
         readestCloud: { enabled: true },
         googleDrive: { enabled: true },
       } as Partial<SystemSettings>);
-      expect(isSyncCategoryEnabled('book')).toBe(true);
-      expect(isSyncCategoryEnabled('progress')).toBe(true);
-      expect(isSyncCategoryEnabled('note')).toBe(true);
+      expect(isSyncCategoryEnabled('book')).toBe(false);
+      expect(isSyncCategoryEnabled('progress')).toBe(false);
+      expect(isSyncCategoryEnabled('note')).toBe(false);
     });
 
     test('native book channels gate off when Readest Cloud is unchecked', () => {

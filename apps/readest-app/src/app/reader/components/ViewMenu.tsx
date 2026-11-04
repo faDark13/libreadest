@@ -9,7 +9,6 @@ import { MdZoomOut, MdZoomIn, MdCheck, MdInfoOutline, MdOutlineSensors } from 'r
 import { MdRemove, MdAdd, MdContrast } from 'react-icons/md';
 import { MdSync, MdSyncProblem } from 'react-icons/md';
 import { IoMdExpand } from 'react-icons/io';
-import { IoShareOutline } from 'react-icons/io5';
 import { setReadingStatsDialogVisible } from '@/components/stats/ReadingStatsDialog';
 import { TbArrowAutofitWidth } from 'react-icons/tb';
 import { TbColumns1, TbColumns2 } from 'react-icons/tb';
@@ -61,7 +60,7 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const { envConfig, appService } = useEnv();
   const { getConfig, getBookData } = useBookDataStore();
   const { setSettingsDialogOpen, setSettingsDialogBookKey } = useSettingsStore();
-  const { getView, getViewSettings, getViewState, getProgress, setViewSettings, recreateViewer } =
+  const { getView, getViewSettings, getViewState, setViewSettings, recreateViewer } =
     useReaderStore();
   const config = getConfig(bookKey)!;
   const bookData = getBookData(bookKey)!;
@@ -192,16 +191,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
   const toggleAutoScroll = () => {
     setIsDropdownOpen?.(false);
     eventDispatcher.dispatch('autoscroll-toggle', { bookKey });
-  };
-
-  const handleShare = () => {
-    setIsDropdownOpen?.(false);
-    if (!bookData?.book) return;
-    const progress = getProgress(bookKey);
-    eventDispatcher.dispatch('show-share-dialog', {
-      book: bookData.book,
-      cfi: progress?.location ?? null,
-    });
   };
 
   useEffect(() => {
@@ -655,8 +644,6 @@ const ViewMenu: React.FC<ViewMenuProps> = ({
       <MenuItem label={_('Reading Statistics')} Icon={PiChartBar} onClick={openReadingStats} />
       <MenuItem label={_('Settings')} Icon={PiGear} onClick={openSettingsDialog} />
       <hr aria-hidden='true' className='border-base-300 my-1' />
-
-      <MenuItem label={_('Share Book')} Icon={IoShareOutline} onClick={handleShare} />
     </Menu>
   );
 };

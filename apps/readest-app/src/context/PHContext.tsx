@@ -8,10 +8,10 @@ import { getAppVersion } from '@/utils/version';
 
 const posthogUrl =
   process.env['NEXT_PUBLIC_POSTHOG_HOST'] ||
-  atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_URL_BASE64']!);
+  atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_URL_BASE64'] ?? '');
 const posthogKey =
   process.env['NEXT_PUBLIC_POSTHOG_KEY'] ||
-  atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64']!);
+  atob(process.env['NEXT_PUBLIC_DEFAULT_POSTHOG_KEY_BASE64'] ?? '');
 
 let initialized = false;
 

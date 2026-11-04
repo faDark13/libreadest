@@ -71,7 +71,8 @@ describe('TTS', () => {
       const sentences = [...getSentences(doc, textWalker, ttsNodeFilter, 'sentence')];
       expect(sentences.map((s) => s.range.toString())).toEqual(['First block.', 'Second block.']);
       expect(createRange.mock.calls.length).toBeLessThan(10);
-    });
+      // 2000 jsdom nodes: this asserts a count, not speed, so give it room.
+    }, 20_000);
 
     it('marks a copy that is not part of the section document', () => {
       // A document updates every one of its live ranges on each mutation, and

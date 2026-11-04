@@ -6,7 +6,6 @@ import {
   READEST_WEB_BASE_URL,
 } from '@/services/constants';
 import { isTauriAppPlatform } from '@/services/environment';
-import { getAccessToken } from '@/utils/access';
 import type { BookNote, HighlightColor } from '@/types/book';
 import type { NotionSettings } from '@/types/settings';
 import {
@@ -492,26 +491,6 @@ export class NotionClient {
     return this.config.accessToken.trim();
   }
 
-  /**
-   * Web builds go through `/api/notion`, which authenticates the Readest user
-   * and only then forwards the Notion secret upstream. So the two credentials
-   * travel in separate headers: `Authorization` carries the Readest JWT and
-   * `X-Notion-Token` carries the integration secret. Desktop and mobile talk to
-   * api.notion.com directly and put the Notion secret in `Authorization`.
-   */
-  private async proxyHeaders(body?: string): Promise<Record<string, string>> {
-    const readestToken = await getAccessToken();
-    if (!readestToken) {
-      throw new Error('Notion sync requires signing in to Readest on the web');
-    }
-    return {
-      Authorization: `Bearer ${readestToken}`,
-      'X-Notion-Token': `Bearer ${this.token}`,
-      'Notion-Version': NOTION_API_VERSION,
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-    };
-  }
-
   private async request(
     path: string,
     options: { method?: RequestMethod; body?: string } = {},
@@ -524,15 +503,18 @@ export class NotionClient {
     };
 
     for (let attempt = 0; ; attempt += 1) {
+      // shortcut: web builds call api.notion.com directly and rely on Notion's
+      // CORS, which only the desktop shell reliably allows; upgrade to a proxy
+      // if the browser build must support Notion.
       const response = isTauriAppPlatform()
         ? await tauriFetch(`${NOTION_API_BASE_URL}${path}`, {
             method,
             headers: nativeHeaders,
             body,
           })
-        : await globalThis.fetch(`/api/notion${path}`, {
+        : await globalThis.fetch(`${NOTION_API_BASE_URL}${path}`, {
             method,
-            headers: await this.proxyHeaders(body),
+            headers: nativeHeaders,
             body,
           });
 

@@ -3,13 +3,11 @@ import { impactFeedback } from '@tauri-apps/plugin-haptics';
 import { useEnv } from '@/context/EnvContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useLibraryStore } from '@/store/libraryStore';
 import { useLocalSendStore } from '@/store/localsendStore';
 import { isTauriAppPlatform } from '@/services/environment';
 import { ingestFile } from '@/services/ingestService';
-import { isNearbyPairingAllowed } from '@/utils/access';
 import {
   DEFAULT_ALIAS_NAMED_KEY,
   getLocalSendAlias,
@@ -94,10 +92,8 @@ const LocalSendManager: React.FC = () => {
     }
   }, [appService]);
 
-  // Pairing entitlement, checked at receive time so a lapsed plan brings the
-  // confirmation dialogs back while the pairing records stay intact.
-  const { userProfilePlan, customizationPurchased } = useQuotaStats();
-  const pairingEntitled = isNearbyPairingAllowed(userProfilePlan ?? 'free', customizationPurchased);
+  // Network pairing is always available in this fork.
+  const pairingEntitled = true;
 
   const toast = useCallback(
     (message: string, type: 'info' | 'error' | 'success' | 'warning' = 'info') =>

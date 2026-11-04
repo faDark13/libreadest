@@ -1,22 +1,9 @@
 import { AppService } from '@/types/system';
-import { deleteCloudLibrary } from '@/libs/user';
 
 /**
- * Wipe the user's whole library: the cloud `books` rows first, then every book
- * on this device.
- *
- * The cloud call goes first on purpose. It is the recoverable half — if it
- * fails, nothing local has been touched yet and the user still has every book.
- * The local purge is irreversible, so it only runs once the network step has
- * succeeded.
- *
- * Both halves are hard removals rather than `deletedAt` tombstones. Tombstones
- * would be pushed back up on the next sync, refilling the very rows we just
- * deleted and clearing the library on every other signed-in device.
+ * Wipe the whole library on this device.
  */
 export const deleteAllBooks = async (appService: AppService): Promise<void> => {
-  await deleteCloudLibrary();
-
   const books = await appService.loadLibraryBooks();
   for (const book of books) {
     try {

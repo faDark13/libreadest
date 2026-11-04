@@ -119,17 +119,10 @@ describe('custom translators in the registry and useTranslator', () => {
     expect(isTranslatorAvailable(builtIn, true, false)).toBe(true);
   });
 
-  it('falls back to a built-in translator for a free user who picked a custom one', async () => {
-    auth.token = sessionToken({ plan: 'free' });
-    const { result } = renderHook(() => useTranslator({ provider: 'custom:llm' }));
-    await waitFor(() => expect(result.current.translator).toBeDefined());
-    expect(result.current.translator!.name.startsWith('custom:')).toBe(false);
-  });
-
-  it('falls back to a built-in translator when signed out', async () => {
+  it('uses the custom translator a reader picked, with no plan at all', async () => {
     auth.token = null;
     const { result } = renderHook(() => useTranslator({ provider: 'custom:llm' }));
     await waitFor(() => expect(result.current.translator).toBeDefined());
-    expect(result.current.translator!.name.startsWith('custom:')).toBe(false);
+    expect(result.current.translator!.name.startsWith('custom:')).toBe(true);
   });
 });

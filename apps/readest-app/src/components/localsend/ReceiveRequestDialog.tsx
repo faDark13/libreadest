@@ -1,15 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { useAppRouter } from '@/hooks/useAppRouter';
-import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useQuotaStats } from '@/hooks/useQuotaStats';
 import { useThemeStore } from '@/store/themeStore';
 import { partitionSupportedFiles } from '@/services/localsend/formats';
 import { previewDataUrl } from '@/services/localsend/preview';
 import type { ReceiveRequest } from '@/services/localsend/types';
-import { isNearbyPairingAllowed } from '@/utils/access';
 import { formatBytes } from '@/utils/book';
-import { navigateToLogin, navigateToProfile } from '@/utils/nav';
 import Alert from '@/components/Alert';
 import clsx from 'clsx';
 
@@ -46,8 +41,6 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
   onDecline,
 }) => {
   const _ = useTranslation();
-  const router = useAppRouter();
-  const { user } = useAuth();
   const { safeAreaInsets } = useThemeStore();
   const [pairDevice, setPairDevice] = useState(false);
   const { supported, skipped } = useMemo(
@@ -55,23 +48,7 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
     [request.files],
   );
 
-  // Mirrors the TTS-cache paywall: badge only users who can't pair yet —
-  // signed out (known at once), or a resolved plan without the feature.
-  // While a signed-in user's plan is still loading, show neither the scope
-  // choice nor the badge so nothing flashes.
-  const { userProfilePlan, customizationPurchased } = useQuotaStats();
-  const pairingEntitled = isNearbyPairingAllowed(userProfilePlan ?? 'free', customizationPurchased);
-  const canPair = request.sender.certVerified && pairingEntitled;
-  const pairLocked =
-    request.sender.certVerified && !pairingEntitled && (!user || userProfilePlan !== undefined);
-
-  const openUpgrade = () => {
-    if (user) {
-      navigateToProfile(router);
-    } else {
-      navigateToLogin(router);
-    }
-  };
+  const canPair = request.sender.certVerified;
 
   return (
     <div
@@ -140,29 +117,6 @@ const ReceiveRequestDialog: React.FC<ReceiveRequestDialogProps> = ({
                 {_('Always accept from {{alias}}', { alias: request.sender.alias })}
               </span>
             </label>
-          )}
-          {pairLocked && (
-            <button type='button' className={clsx(PAIR_ROW, 'mt-2 w-full')} onClick={openUpgrade}>
-              {/* Decorative, never `disabled`: daisyUI drops a disabled box to
-                  `opacity: .2` on top of an already 20%-opacity border, which
-                  left the control indistinguishable from the surface. Keep it
-                  at full opacity with an explicit border and take it out of
-                  the tab order instead - the row itself is the control. */}
-              <input
-                type='checkbox'
-                className='checkbox checkbox-sm eink-bordered border-base-content/45 pointer-events-none mt-0.5 shrink-0'
-                checked={false}
-                readOnly
-                tabIndex={-1}
-                aria-hidden='true'
-              />
-              <span className='text-base-content/60 select-none'>
-                {_('Always accept from {{alias}}', { alias: request.sender.alias })}
-              </span>
-              <span className='badge badge-sm badge-ghost ms-auto mt-0.5 shrink-0'>
-                {_('Premium')}
-              </span>
-            </button>
           )}
         </div>
       </Alert>

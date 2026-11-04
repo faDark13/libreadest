@@ -21,7 +21,7 @@ import { isCustomTranslatorAllowed } from '@/utils/access';
 import { useTranslation } from './useTranslation';
 
 export function useTranslator({
-  provider = 'deepl',
+  provider = 'google',
   sourceLang = 'AUTO',
   targetLang = 'EN',
   enablePolishing = true,

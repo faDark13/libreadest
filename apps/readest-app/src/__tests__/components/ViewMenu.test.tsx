@@ -382,6 +382,6 @@ describe('ViewMenu layout', () => {
       'Webtoon Mode',
       'hr',
     ]);
-    expect(seq[autoScroll + 6]).toBe('Sign in to Sync');
+    expect(seq[autoScroll + 6]).toBe('Never synced');
   });
 });

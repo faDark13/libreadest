@@ -63,10 +63,10 @@ describe('getBookDataDestinations', () => {
     expect(await ids()).toEqual([]);
   });
 
-  test('adds Readest Cloud for an uploaded book', async () => {
+  test('never adds Readest Cloud, even for an uploaded book', async () => {
     gateMock.mockReturnValue({ readest: true, backends: ['webdav'], paused: false });
     setSettings({ readestCloud: { enabled: true } } as Partial<SystemSettings>);
-    expect(await ids()).toEqual(['readest', 'webdav']);
+    expect(await ids()).toEqual(['webdav']);
   });
 
   test('skips Readest Cloud for a book that is not uploaded', async () => {
