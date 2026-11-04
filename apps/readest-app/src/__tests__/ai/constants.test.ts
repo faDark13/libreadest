@@ -42,8 +42,8 @@ describe('DEFAULT_AI_SETTINGS', () => {
     expect(DEFAULT_AI_SETTINGS.enabled).toBe(false);
   });
 
-  test('should have ollama as default provider', () => {
-    expect(DEFAULT_AI_SETTINGS.provider).toBe('ollama');
+  test('should default to the user-supplied OpenAI-compatible endpoint', () => {
+    expect(DEFAULT_AI_SETTINGS.provider).toBe('openrouter');
   });
 
   test('should have valid ollama defaults', () => {
